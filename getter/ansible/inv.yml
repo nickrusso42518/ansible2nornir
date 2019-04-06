@@ -1,0 +1,11 @@
+---
+all:
+  children:
+    devices:
+      children:
+        ios:
+          hosts:
+            CSR:
+        iosxr:
+          hosts:
+            XRV:

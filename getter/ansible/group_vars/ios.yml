@@ -1,0 +1,7 @@
+---
+ansible_network_os: ios
+commands:
+  - command: "show ip ospf neighbor"
+    file_suffix: "igp"
+  - command: "show version"
+    file_suffix: "ver"

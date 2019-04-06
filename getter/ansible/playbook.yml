@@ -1,0 +1,30 @@
+---
+- name: "PLAY 1: Collect information from devices"
+  hosts: devices
+  tasks:
+    - name: "TASK 1: Identify output directory"
+      set_fact:
+        outputs: "{{ playbook_dir }}/outputs"
+
+    - name: "TASK 2: Create folder for collected output"
+      file:
+        path: "{{ outputs }}"
+        state: directory
+      run_once: true
+      delegate_to: localhost
+
+    - name: "TASK 3: Run CLI commands"
+      cli_command:
+        command: "{{ item.command }}"
+      register: cli_output
+      loop: "{{ commands }}"
+
+    - name: "TASK 4: Write command output to text file"
+      copy:
+        content: "{{ item.0.stdout }}\n"
+        dest: "{{ outputs }}/{{ inventory_hostname }}_{{ item.1.file_suffix }}.txt"
+        mode: 0444
+      loop: "{{ cli_output.results | zip(commands) | list }}"
+      loop_control:
+        label: "{{ item.1 }}"
+      delegate_to: localhost
