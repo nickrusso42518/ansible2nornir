@@ -1,0 +1,26 @@
+---
+devices:
+  username: admin
+  password: password123
+
+ios:
+  platform: ios
+  groups:
+    - devices
+  data:
+    commands:
+      - command: "show ip ospf neighbor"
+        file_suffix: "igp"
+      - command: "show version"
+        file_suffix: "ver"
+
+iosxr:
+  platform: iosxr
+  groups:
+    - devices
+  data:
+    commands:
+      - command: "show ospf neighbor"
+        file_suffix: "igp"
+      - command: "show version"
+        file_suffix: "ver"
