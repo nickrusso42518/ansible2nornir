@@ -1,0 +1,10 @@
+---
+CSR:
+  hostname: CSR
+  groups:
+    - ios
+
+XRV:
+  hostname: XRV
+  groups:
+    - iosxr
