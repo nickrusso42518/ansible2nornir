@@ -2,29 +2,50 @@
 - name: "PLAY 1: Collect information from devices"
   hosts: devices
   tasks:
-    - name: "TASK 1: Identify output directory"
-      set_fact:
-        outputs: "{{ playbook_dir }}/outputs"
+    # We don't need to create the "outputs" directory multiple times,
+    # so use the "run_once" option coupled with "delegate_to" to
+    # override basic Ansible and network_cli behavior.
+    - name: "BLOCK: Perform one-time setup on control machine"
+      block:
+        - name: "TASK 1: Identify output directory"
+          set_fact:
+            outputs: "{{ playbook_dir }}/outputs"
 
-    - name: "TASK 2: Create folder for collected output"
-      file:
-        path: "{{ outputs }}"
-        state: directory
+        - name: "TASK 2: Create folder for collected output"
+          file:
+            path: "{{ outputs }}"
+            state: directory
       run_once: true
       delegate_to: localhost
 
+    # Some *_command modules allow a list of commands ot be passed in, but
+    # the generic "cli_command" does not. Iteratively loop over the module
+    # for each command specified, running it on each host. It is roughly
+    # equivalent to the following Python code:
+    #   result = [cli_command(command=item.command) for item in commands]
     - name: "TASK 3: Run CLI commands"
       cli_command:
         command: "{{ item.command }}"
-      register: cli_output
+      register: result
       loop: "{{ commands }}"
 
+    # Another task for the control machine, this writes the output from each
+    # command to a specific file in the following format:
+    #   outputs/csr_igp.txt
+    #   outputs/xrv_ver.txt
+    # When iterating, Ansible prints out the entire item, which could be a
+    # complex dict, at each iteration. This can be simplified by overriding
+    # the loop_control label to something more readable, such as just the file
+    # suffix. The loop iterates over two equal-length lists in parallel,
+    # roughly equivalent to the following Python code:
+    #   for item in zip(result.results, commands):
+    #     (do stuff with item[0] and item[1])
     - name: "TASK 4: Write command output to text file"
       copy:
         content: "{{ item.0.stdout }}\n"
         dest: "{{ outputs }}/{{ inventory_hostname }}_{{ item.1.file_suffix }}.txt"
         mode: 0444
-      loop: "{{ cli_output.results | zip(commands) | list }}"
+      loop: "{{ result.results | zip(commands) | list }}"
       loop_control:
         label: "{{ item.1 }}"
       delegate_to: localhost
